@@ -1,0 +1,227 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Windows.Forms;
+
+namespace Draw
+{
+	/// <summary>
+	/// Върху главната форма е поставен потребителски контрол,
+	/// в който се осъществява визуализацията
+	/// </summary>
+	public partial class MainForm : Form
+	{
+		/// <summary>
+		/// Агрегирания диалогов процесор във формата улеснява манипулацията на модела.
+		/// </summary>
+		/// 
+
+		public int Selection = 1;
+
+		public Shape SelectedItem = null;
+		private DialogProcessor dialogProcessor = new DialogProcessor();
+		public List<Shape> ItemsList = new List<Shape>();
+		public static Color BorderColor { get; set; } = new Color();
+		int width;
+		int height;
+		int borderWidth;
+
+		public MainForm()
+		{
+			//
+			// The InitializeComponent() call is required for Windows Forms designer support.
+			//
+			InitializeComponent();
+
+			//
+			// TODO: Add constructor code after the InitializeComponent() call.
+			//
+		}
+
+		/// <summary>
+		/// Изход от програмата. Затваря главната форма, а с това и програмата.
+		/// </summary>
+		void openToolStripMenuItemClick(object sender, EventArgs e)
+		{
+			openFileDialog1.ShowDialog();
+		}
+
+		private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
+		{
+			BinaryFormatter binaryFormatter = new BinaryFormatter();
+
+			FileStream fileStream = new FileStream(openFileDialog1.FileName, FileMode.Open, FileAccess.Read, FileShare.None);
+
+			ItemsList = (List<Shape>)binaryFormatter.Deserialize(fileStream);
+
+			fileStream.Close();
+
+			// setting it back
+			Selection = 1;
+			SelectedItem = null;
+			Refresh();
+		}
+
+		private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			SaveFileDialog saveDialog = new SaveFileDialog
+			{
+				Filter = "draw file (*.png)|*.png",
+				Title = "Save an a file"
+			};
+
+            if (saveDialog.ShowDialog() == DialogResult.OK)
+            {
+				BinaryFormatter binaryFormatter = new BinaryFormatter();
+
+				FileStream stream = new FileStream(saveDialog.FileName, FileMode.Create, FileAccess.Write, FileShare.None);
+
+				binaryFormatter.Serialize(stream, ItemsList);
+
+				stream.Close();
+            }
+		}
+		/// <summary>
+		/// Събитието, което се прихваща, за да се превизуализира при изменение на модела.
+		/// </summary>
+		void ViewPortPaint(object sender, PaintEventArgs e)
+		{
+			dialogProcessor.ReDraw(sender, e);
+		}
+
+		/// <summary>
+		/// Бутон, който поставя на произволно място правоъгълник със зададените размери.
+		/// Променя се лентата със състоянието и се инвалидира контрола, в който визуализираме.
+		/// </summary>
+		
+
+		/// <summary>
+		/// Прихващане на координатите при натискането на бутон на мишката и проверка (в обратен ред) дали не е
+		/// щракнато върху елемент. Ако е така то той се отбелязва като селектиран и започва процес на "влачене".
+		/// Промяна на статуса и инвалидиране на контрола, в който визуализираме.
+		/// Реализацията се диалогът с потребителя, при който се избира "най-горния" елемент от екрана.
+		/// </summary>
+		void ViewPortMouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			if (pickUpSpeedButton.Checked)
+			{
+				dialogProcessor.Selection = dialogProcessor.ContainsPoint(e.Location);
+				if (dialogProcessor.Selection != null)
+				{
+					statusBar.Items[0].Text = "Последно действие: Селекция на примитив";
+					dialogProcessor.IsDragging = true;
+					dialogProcessor.LastLocation = e.Location;
+					viewPort.Invalidate();
+				}
+			}
+            if (eraseButton.Checked)
+            {
+				dialogProcessor.Selection = dialogProcessor.ContainsPoint(e.Location);
+                if (dialogProcessor.Selection != null)
+                {
+					statusBar.Items[0].Text = "Последно действие: Изтриване на примитив";
+					dialogProcessor.ShapeList.Remove(SelectedItem);
+					viewPort.Invalidate();
+                }
+            }
+		}
+
+		/// <summary>
+		/// Прихващане на преместването на мишката.
+		/// Ако сме в режм на "влачене", то избрания елемент се транслира.
+		/// </summary>
+		void ViewPortMouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			if (dialogProcessor.IsDragging)
+			{
+				if (dialogProcessor.Selection != null) statusBar.Items[0].Text = "Последно действие: Влачене";
+				dialogProcessor.TranslateTo(e.Location);
+				viewPort.Invalidate();
+			}
+		}
+
+		/// <summary>
+		/// Прихващане на отпускането на бутона на мишката.
+		/// Излизаме от режим "влачене".
+		/// </summary>
+		void ViewPortMouseUp(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			dialogProcessor.IsDragging = false;
+		}
+
+        private void DrawRectangleSpeedButtonClick(object sender, EventArgs e)
+        {
+			dialogProcessor.AddRandomRectangle();
+
+			statusBar.Items[0].Text = "Последно действие: Рисуване на правоъгълник";
+
+			viewPort.Invalidate();
+		}
+
+        private void DrawCircleSpeedButtonClick(object sender, EventArgs e)
+        {
+			dialogProcessor.AddRandomCircle();
+
+			statusBar.Items[0].Text = "Последно действие: Рисуване на правоъгълник";
+
+			viewPort.Invalidate();
+		}
+
+        private void ColorButtonClick(object sender, EventArgs e)
+        {
+				if (colorDialog1.ShowDialog() == DialogResult.OK)
+				{
+					dialogProcessor.Selection.FillColor = colorDialog1.Color;
+					statusBar.Items[0].Text = "Последно действие: Промяна на цвят";
+					viewPort.Invalidate();
+				}
+        }
+
+        private void AddSquareSpeedButton_Click(object sender, EventArgs e)
+        {
+			dialogProcessor.AddRandomSquare();
+
+			statusBar.Items[0].Text = "Последно действие: Рисуване на правоъгълник";
+
+			viewPort.Invalidate();
+		}
+
+        private void numericUpDown1_ValueChanged_1(object sender, EventArgs e)
+        {
+			width = Convert.ToInt32(numericUpDown1.Value);
+			dialogProcessor.SetNewWidth(width);
+			statusBar.Items[0].Text = "Последно действие: увеличаване на широчина.";
+			viewPort.Invalidate();
+		}
+
+        private void numericUpDown2_ValueChanged(object sender, EventArgs e)
+        {
+			height = Convert.ToInt32(numericUpDown2.Value);
+			dialogProcessor.SetNewHeight(height);
+			statusBar.Items[0].Text = "Последно действие: смена на височина.";
+			viewPort.Invalidate();
+		}
+
+        private void transparencyUpDown_ValueChanged(object sender, EventArgs e)
+        {
+			dialogProcessor.SetNewTransparency((int)transparencyUpDown.Value);
+			statusBar.Items[0].Text = "Последно действие: смена на прозрачност. ";
+			viewPort.Invalidate();
+        }
+
+        private void borderWidthUpDown_ValueChanged(object sender, EventArgs e)
+        {
+			borderWidth = Convert.ToInt32(borderWidthUpDown.Value);
+			dialogProcessor.SetNewBorderWidth(borderWidth, BorderColor);
+			viewPort.Invalidate();
+        }
+
+        private void eraseButton_Click(object sender, EventArgs e)
+        {
+			pickUpSpeedButton.Checked = false;
+        }
+    }
+}

@@ -1,0 +1,65 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
+using System.Text;
+
+namespace Draw.src.Model
+{
+    public class HouseShape : Shape
+    {
+		#region Constructor
+		public HouseShape()
+		{
+
+		}
+
+		public HouseShape(RectangleF rect) : base(rect)
+		{
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Проверка за принадлежност на точка point към правоъгълника.
+		/// В случая на правоъгълник този метод може да не бъде пренаписван, защото
+		/// Реализацията съвпада с тази на абстрактния клас Shape, който проверява
+		/// дали точката е в обхващащия правоъгълник на елемента (а той съвпада с
+		/// елемента в този случай).
+		/// </summary>
+		public override bool Contains(PointF point)
+		{
+			if (base.Contains(point))
+				// Проверка дали е в обекта само, ако точката е в обхващащия правоъгълник.
+				// В случая на правоъгълник - директно връщаме true
+				return true;
+			else
+				// Ако не е в обхващащия правоъгълник, то неможе да е в обекта и => false
+				return false;
+		}
+
+		/// <summary>
+		/// Частта, визуализираща конкретния примитив.
+		/// </summary>
+		public override void DrawSelf(Graphics grfx)
+		{
+			GraphicsPath path = new GraphicsPath();
+			PointF[] points = {new PointF(Rectangle.X, Rectangle.Y + Rectangle.Height / 3.5f),
+					new PointF( Rectangle.X + Rectangle.Width / 2, Rectangle.Top - 50),
+					new PointF(Rectangle.Right, Rectangle.Y  + Rectangle.Height / 3.5f)};
+			path.AddRectangle(new RectangleF(Rectangle.X, Rectangle.Y + 35, Rectangle.Width, Rectangle.Height));
+
+            if (BorderWidth != 0)
+            {
+				grfx.DrawPath(new Pen(Color.FromArgb(Transparency, BorderColor), BorderWidth), path);
+				grfx.DrawPolygon(new Pen(Color.FromArgb(Transparency, BorderColor), BorderWidth), points);
+			}
+
+			//grfx.DrawRectangle(new Pen(Color.Red), Rectangle.X , Rectangle.Y , Rectangle.Width + 70, Rectangle.Height + 70);
+
+			grfx.FillPolygon(new SolidBrush(Color.FromArgb(Transparency, FillColor)), points);
+			grfx.FillPath(new SolidBrush(Color.FromArgb(Transparency, FillColor)), path);
+		}
+	}
+}

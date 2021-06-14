@@ -1,0 +1,56 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+
+namespace Draw.src.Model
+{
+    public class CircleShape : Shape
+    {
+		 #region Constructor
+
+		public CircleShape(RectangleF rect) : base(rect)
+		{
+		}
+
+		public CircleShape(RectangleShape rectangle) : base(rectangle)
+		{
+		}
+
+		#endregion
+
+		/// <summary>
+		/// Проверка за принадлежност на точка point към правоъгълника.
+		/// В случая на правоъгълник този метод може да не бъде пренаписван, защото
+		/// Реализацията съвпада с тази на абстрактния клас Shape, който проверява
+		/// дали точката е в обхващащия правоъгълник на елемента (а той съвпада с
+		/// елемента в този случай).
+		/// </summary>
+		public override bool Contains(PointF point)
+		{
+			int a = (int)Width / 2, b = (int)Height / 2;
+			Point centreOfEllipse = new Point((int)(Location.X + a), (int)(Location.Y + b));
+			int left = (int)(Math.Pow((point.X - centreOfEllipse.X), 2) / Math.Pow(a, 2));
+			int right = (int)(Math.Pow((point.Y - centreOfEllipse.Y), 2) / Math.Pow(b, 2));
+			if (left + right <= 0)
+			{
+				return true;
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// Частта, визуализираща конкретния примитив.
+		/// </summary>
+		public override void DrawSelf(Graphics grfx)
+		{
+			if (BorderWidth != 0)
+			{
+				grfx.DrawEllipse(new Pen(Color.FromArgb(Transparency, BorderColor), BorderWidth), Rectangle);
+			}
+			grfx.DrawEllipse(new Pen(Color.Black), Rectangle.X - 3, Rectangle.Y - 3, Rectangle.Width + 6, Rectangle.Height + 6);
+			grfx.FillEllipse(new SolidBrush(Color.FromArgb(Transparency, FillColor)), Rectangle);
+		}
+	}
+}
